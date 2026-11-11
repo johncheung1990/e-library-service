@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.zzj.mapper.BookMapper">
+
+    <resultMap id="bookMap" type="com.zzj.entity.BookDO">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="author" property="author"/>
+        <result column="isbn" property="isbn"/>
+        <result column="description" property="description"/>
+        <result column="category" property="category"/>
+        <result column="total_num" property="totalNum"/>
+        <result column="available_num" property="availableNum"/>
+        <result column="status" property="status"/>
+        <result column="created_by" property="createdBy"/>
+        <result column="created_date" property="createdDate"/>
+        <result column="updated_by" property="updatedBy"/>
+        <result column="updated_date" property="updatedDate"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, title, author, isbn, description, category,
+        total_num, available_num, status, created_by,
+        created_date, updated_by, updated_date
+    </sql>
+
+    <select id="countAllBooks" resultType="long">
+        SELECT COUNT(0) FROM book WHERE status != 2
+    </select>
+
+    <select id="findAllBooks" resultMap="bookMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM book
+        WHERE status != 2
+        ORDER BY created_date DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="findBookById" resultMap="bookMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM book
+        WHERE id = #{id}
+    </select>
+
+    <select id="findBookByIsbn" resultMap="bookMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM book
+        WHERE isbn = #{isbn}
+    </select>
+
+    <select id="searchBooks" resultMap="bookMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM book WHERE status != 2
+        <if test="keyword != null and keyword != ''">
+            AND (title LIKE CONCAT('%', #{keyword}, '%')
+            OR author LIKE CONCAT('%', #{keyword}, '%')
+            OR isbn LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+        ORDER BY created_date DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <!-- 统计搜索结果总数 -->
+    <select id="countSearchBooks" resultType="long">
+        SELECT COUNT(0) FROM book
+        WHERE status != 2
+        <if test="keyword != null and keyword != ''">
+            AND (title LIKE CONCAT('%', #{keyword}, '%')
+            OR author LIKE CONCAT('%', #{keyword}, '%')
+            OR isbn LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        <if test="category != null and category != ''">
+            AND category = #{category}
+        </if>
+    </select>
+
+    <update id="updateBookStock">
+        UPDATE book
+        SET available_num = #{availableNum},
+            status = CASE
+                        WHEN #{availableNum} > 0 THEN 0
+                        ELSE 1
+                    END
+        WHERE id = #{id}
+    </update>
+
+</mapper>
